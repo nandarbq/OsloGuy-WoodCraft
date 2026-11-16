@@ -7,51 +7,43 @@ npm install
 npm run dev   # http://localhost:3000
 ```
 
-Tanpa konfigurasi Supabase, aplikasi berjalan dalam mode demo dan menyimpan produk di `localStorage`.
+Tanpa konfigurasi Supabase, aplikasi berjalan dalam mode demo lokal. Login dan role memerlukan Supabase.
 
-## Menghubungkan Supabase
+## Setup Supabase: login dan role
 
-1. Buat project di [Supabase](https://supabase.com/), lalu buka **SQL Editor** dan jalankan:
+1. Di Supabase **SQL Editor**, jalankan isi [`supabase/setup.sql`](./supabase/setup.sql). Script ini membuat tabel produk, profil role, pengaturan WhatsApp, trigger untuk user baru, dan Row Level Security (RLS). Public dapat membaca katalog; hanya admin dan seller pemilik produk dapat mengubah produk.
+2. User yang sudah ada akan mendapat profil buyer. Jadikan user Anda sebagai admin pertama dengan menjalankan query ini, ganti alamat email contoh:
 
    ```sql
-   create table if not exists products (
-     id uuid primary key default gen_random_uuid(),
-     nama text not null check (char_length(nama) between 1 and 80),
-     kategori text not null,
-     harga numeric not null check (harga >= 0),
-     stok integer not null check (stok >= 0),
-     deskripsi text not null default '',
-     image_url text not null default '',
-     unggulan boolean not null default false,
-     created_at timestamptz not null default now()
-   );
+   update public.profiles
+   set role = 'admin'
+   where lower(email) = lower('EMAIL_USER_YANG_SUDAH_DIBUAT');
 
-   alter table products enable row level security;
-
-   create policy "baca publik" on products
-     for select using (true);
-
-   create policy "tulis admin" on products
-     for all to authenticated
-     using (true) with check (true);
+   select email, role from public.profiles;
    ```
 
-   Jalankan SQL ini satu kali pada database baru.
-
-2. Di **Authentication → Users**, buat user untuk admin. Matikan pendaftaran publik (sign ups) di pengaturan **Authentication**, agar pengunjung tidak bisa membuat akun sendiri. Semua user yang terautentikasi di project ini mendapat izin tulis dari policy di atas.
-3. Ambil **Project URL** dan **anon/public key** dari **Project Settings → API**. Buat `.env.local` di folder project (boleh salin format dari `.env.example`):
+3. Admin perlu membuat user seller dan buyer untuk contoh ini. Setelah login sebagai admin, buka **Dashboard → Kelola akun** dan buat keduanya. Admin dapat mengatur role atau menghapus akun; aplikasi mencegah penghapusan admin terakhir. Untuk mencegah pengunjung membuat akun sendiri, buka **Authentication → Settings** dan matikan **Allow new users to sign up**. Login akun yang sudah dibuat tetap berfungsi.
+4. Tambahkan URL dan publishable key ke `.env.local` di root project. URL dan publishable key sudah diisi pada komputer yang dipakai mengembangkan project. Agar admin dapat membuat user dari aplikasi, tambahkan juga secret server-side:
 
    ```env
    NEXT_PUBLIC_SUPABASE_URL=https://YOUR_PROJECT_ID.supabase.co
-   NEXT_PUBLIC_SUPABASE_ANON_KEY=YOUR_SUPABASE_ANON_KEY
+   NEXT_PUBLIC_SUPABASE_ANON_KEY=YOUR_SUPABASE_PUBLISHABLE_KEY
+   SUPABASE_SERVICE_ROLE_KEY=YOUR_SUPABASE_SECRET_OR_SERVICE_ROLE_KEY
    ```
 
-   Gunakan hanya anon/public key di aplikasi browser. Jangan pernah masukkan `service_role` key ke `.env.local` yang berawalan `NEXT_PUBLIC_` atau ke Git.
-4. Mulai ulang `npm run dev`. Buka **Dashboard**, masuk memakai email dan password admin, lalu tambah produk. Katalog publik dapat membaca data; perubahan data perlu login.
+   Ambil secret/service-role key dari **Project Settings → API Keys**. `SUPABASE_SERVICE_ROLE_KEY` tidak berawalan `NEXT_PUBLIC_`; jangan kirim ke browser, commit ke Git, atau bagikan. `.env.local` sudah diabaikan Git. Setelah mengubah file, mulai ulang `npm run dev`.
+5. Setelah akun seller dibuat, jalankan [`supabase/demo-data.sql`](./supabase/demo-data.sql) untuk menambahkan delapan produk dummy yang dimiliki seller pertama.
 
-Jika project masih baru dan tabel `products` kosong, katalog akan kosong sampai produk pertama ditambahkan dari Dashboard.
-Kolom nomor WhatsApp toko saat ini masih disimpan di browser, belum di Supabase.
+## Hak akses
 
-## Catatan
+- **Admin:** mengelola akun (membuat user, mengubah role, menghapus user) dan semua produk; mengatur nomor WhatsApp toko.
+- **Seller:** menambah, mengubah, dan menghapus produk miliknya sendiri.
+- **Buyer:** melihat katalog dan menghubungi toko lewat WhatsApp; tidak memiliki Dashboard atau akses tulis.
 
-Produk memakai tabel `products`; gambar disimpan sebagai URL di `image_url`. Supabase Storage belum dikonfigurasi.
+Role produk dan user juga dibatasi di Supabase RLS, bukan hanya disembunyikan di antarmuka. Semua akun yang dibuat admin langsung dikonfirmasi untuk demo dan dapat login dengan email/password yang diberikan admin.
+
+## Deploy
+
+Di hosting, misalnya Vercel, atur tiga environment variable yang sama di **Project Settings → Environment Variables**, termasuk secret server-side `SUPABASE_SERVICE_ROLE_KEY`, lalu deploy ulang. Jangan memasukkan secret tersebut ke variabel `NEXT_PUBLIC_*`.
+
+Foto produk disimpan sebagai URL pada `image_url`; Supabase Storage belum dikonfigurasi.
