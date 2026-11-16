@@ -22,8 +22,9 @@ Tanpa konfigurasi Supabase, aplikasi berjalan dalam mode demo lokal. Login dan r
    select email, role from public.profiles;
    ```
 
-3. Untuk mengaktifkan registrasi, buka **Authentication → Settings → User Signups** dan nyalakan **Allow new users to sign up**. Pengunjung memilih sendiri daftar sebagai **Pembeli** atau **Penjual**; form memvalidasi nama, email, serta kata sandi dan konfirmasinya. Role admin tidak tersedia di form dan hanya diberikan melalui query bootstrap admin. Bila konfirmasi email aktif, pengguna perlu mengonfirmasi email sebelum masuk. Admin dapat mengubah role atau menghapus akun dari **Dashboard → Kelola akun**, tetapi tidak membuat akun pembeli/penjual. Aplikasi mencegah penghapusan admin terakhir.
-4. Tambahkan URL dan publishable key ke `.env.local` di root project. URL dan publishable key sudah diisi pada komputer yang dipakai mengembangkan project. Agar admin dapat melihat dan mengelola akun dari dashboard, tambahkan juga secret server-side:
+3. Untuk mengaktifkan registrasi, buka **Authentication → Settings → User Signups** dan nyalakan **Allow new users to sign up**. Pengunjung memilih sendiri daftar sebagai **Pembeli** atau **Penjual**; form memvalidasi nama, email, serta kata sandi dan konfirmasinya. Role admin tidak tersedia di form dan hanya diberikan melalui query bootstrap admin. Admin dapat mengubah role atau menghapus akun dari **Dashboard → Kelola akun**, tetapi tidak membuat akun pembeli/penjual. Aplikasi mencegah penghapusan admin terakhir.
+4. Agar pendaftar tidak perlu verifikasi email, buka **Authentication → Providers → Email** dan matikan **Confirm email**. Pendaftaran tanpa verifikasi akan langsung membuat sesi login. Tombol **Lupa sandi?** tetap mengirim tautan pemulihan lewat email. Tambahkan URL pemulihan ke **Authentication → URL Configuration → Redirect URLs**, misalnya `http://localhost:3000/**` dan `https://DOMAIN-VERCEL-ANDA/**`.
+5. Tambahkan URL dan publishable key ke `.env.local` di root project. URL dan publishable key sudah diisi pada komputer yang dipakai mengembangkan project. Agar admin dapat melihat dan mengelola akun dari dashboard, tambahkan juga secret server-side:
 
    ```env
    NEXT_PUBLIC_SUPABASE_URL=https://YOUR_PROJECT_ID.supabase.co
@@ -32,7 +33,7 @@ Tanpa konfigurasi Supabase, aplikasi berjalan dalam mode demo lokal. Login dan r
    ```
 
    Ambil secret/service-role key dari **Project Settings → API Keys**. `SUPABASE_SERVICE_ROLE_KEY` tidak berawalan `NEXT_PUBLIC_`; jangan kirim ke browser, commit ke Git, atau bagikan. `.env.local` sudah diabaikan Git. Setelah mengubah file, mulai ulang `npm run dev`.
-5. Setelah ada akun seller, jalankan [`supabase/demo-data.sql`](./supabase/demo-data.sql) untuk menambahkan atau memperbarui delapan produk dummy yang dimiliki seller pertama.
+6. Setelah ada akun seller, jalankan [`supabase/demo-data.sql`](./supabase/demo-data.sql) untuk menambahkan atau memperbarui delapan produk dummy yang dimiliki seller pertama.
 
 ## Hak akses
 
