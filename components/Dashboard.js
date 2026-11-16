@@ -3,8 +3,18 @@ import { useCallback, useEffect, useState } from 'react';
 import { SEED, rp } from '../lib/store';
 
 const EMPTY = { id: '', nama: '', kategori: '', harga: '', stok: '', deskripsi: '', imageUrl: '', unggulan: false };
-const NEW_USER = { email: '', password: '', role: 'buyer' };
 const ROLES = ['admin', 'seller', 'buyer'];
+const PRODUCT_NAME_PATTERN = /^[\p{L}\p{M}\p{N}][\p{L}\p{M}\p{N} .,'’&()\/-]*$/u;
+const CATEGORY_PATTERN = /^[\p{L}\p{M}][\p{L}\p{M} &'-]*$/u;
+
+function validImageUrl(value) {
+  if (value.startsWith('/') && !value.startsWith('//')) return !value.split('/').includes('..');
+  try {
+    return new URL(value).protocol === 'https:';
+  } catch {
+    return false;
+  }
+}
 
 export default function Dashboard({
   items, commit, wa, setWa, isSupabase, role, user, adminUsersRequest,
@@ -16,9 +26,7 @@ export default function Dashboard({
   const [msg, setMsg] = useState('');
   const [tab, setTab] = useState('products');
   const [users, setUsers] = useState([]);
-  const [newUser, setNewUser] = useState(NEW_USER);
   const [usersLoading, setUsersLoading] = useState(false);
-  const [creatingUser, setCreatingUser] = useState(false);
   const [usersError, setUsersError] = useState('');
 
   const isAdmin = !isSupabase || role === 'admin';
@@ -61,11 +69,20 @@ export default function Dashboard({
     event.preventDefault();
     const nama = f.nama.trim(), kategori = f.kategori.trim(), imageUrl = f.imageUrl.trim();
     const harga = Number(f.harga), stok = Number(f.stok), errors = {};
-    if (nama.length < 3) errors.nama = 'Nama minimal 3 karakter.';
-    if (!kategori) errors.kategori = 'Kategori wajib diisi.';
-    if (f.harga === '' || !Number.isFinite(harga) || harga < 0) errors.harga = 'Harga harus angka 0 atau lebih.';
-    if (f.stok === '' || !Number.isInteger(stok) || stok < 0) errors.stok = 'Stok harus bilangan bulat 0 atau lebih.';
-    if (imageUrl && !/^(https:\/\/|\/)/i.test(imageUrl)) errors.imageUrl = 'Gunakan URL https:// atau path yang diawali /.';
+    if (nama.length < 3 || nama.length > 80 || !PRODUCT_NAME_PATTERN.test(nama)) {
+      errors.nama = 'Nama produk 3–80 karakter; gunakan huruf, angka, spasi, atau tanda baca umum.';
+    }
+    if (kategori.length < 1 || kategori.length > 40 || !CATEGORY_PATTERN.test(kategori)) {
+      errors.kategori = 'Kategori wajib 1–40 karakter dan tidak boleh berisi angka.';
+    }
+    if (f.harga === '' || !Number.isInteger(harga) || harga < 0 || harga > 1000000000) {
+      errors.harga = 'Harga harus bilangan bulat Rp0–Rp1.000.000.000.';
+    }
+    if (f.stok === '' || !Number.isInteger(stok) || stok < 0 || stok > 2147483647) {
+      errors.stok = 'Stok harus bilangan bulat 0–2.147.483.647.';
+    }
+    if (f.deskripsi.trim().length > 300) errors.deskripsi = 'Deskripsi maksimal 300 karakter.';
+    if (imageUrl && !validImageUrl(imageUrl)) errors.imageUrl = 'Gunakan URL https:// yang valid atau path lokal seperti /products/foto.webp.';
     setErr(errors);
     if (Object.keys(errors).length) return;
 
@@ -116,26 +133,6 @@ export default function Dashboard({
     }
   }
 
-  async function createUser(event) {
-    event.preventDefault();
-    setUsersError('');
-    if (newUser.password.length < 12 || !/[a-z]/.test(newUser.password) || !/[A-Z]/.test(newUser.password) || !/\d/.test(newUser.password)) {
-      setUsersError('Password minimal 12 karakter dengan huruf besar, huruf kecil, dan angka.');
-      return;
-    }
-    setCreatingUser(true);
-    try {
-      await adminUsersRequest('POST', newUser);
-      setNewUser(NEW_USER);
-      say('Akun berhasil dibuat');
-      await loadUsers();
-    } catch (createError) {
-      setUsersError(createError.message || 'Gagal membuat akun.');
-    } finally {
-      setCreatingUser(false);
-    }
-  }
-
   async function updateUserRole(id, newRole) {
     setUsersError('');
     try {
@@ -161,8 +158,8 @@ export default function Dashboard({
   const field = (key, label, extra = {}) => (
     <div className="fg">
       <label htmlFor={key}>{label}</label>
-      <input id={key} value={f[key]} onChange={set(key)} {...extra} />
-      <span className="err">{err[key]}</span>
+      <input id={key} value={f[key]} onChange={set(key)} aria-invalid={Boolean(err[key])} aria-describedby={err[key] ? `error-${key}` : undefined} {...extra} />
+      <span className="err" id={`error-${key}`}>{err[key]}</span>
     </div>
   );
 
@@ -181,55 +178,33 @@ export default function Dashboard({
       )}
 
       {tab === 'users' && isAdmin && isSupabase ? (
-        <>
-          <section className="panel">
-            <h3>Buat akun</h3>
-            <p className="mute">Akun yang dibuat admin langsung bisa login. Buyer menjadi role default bila dipilih.</p>
-            <form className="row" onSubmit={createUser}>
-              <div className="fg" style={{ flex: '1 1 200px' }}>
-                <label htmlFor="new-user-email">Email</label>
-                <input id="new-user-email" type="email" required value={newUser.email} onChange={(event) => setNewUser({ ...newUser, email: event.target.value })} />
-              </div>
-              <div className="fg" style={{ flex: '1 1 160px' }}>
-                <label htmlFor="new-user-password">Password (min. 12 karakter)</label>
-                <input id="new-user-password" type="password" minLength={12} maxLength={72} required value={newUser.password} onChange={(event) => setNewUser({ ...newUser, password: event.target.value })} />
-              </div>
-              <div className="fg">
-                <label htmlFor="new-user-role">Role</label>
-                <select id="new-user-role" value={newUser.role} onChange={(event) => setNewUser({ ...newUser, role: event.target.value })}>
-                  {ROLES.map((item) => <option key={item} value={item}>{item}</option>)}
-                </select>
-              </div>
-              <button className="btn ink" type="submit" disabled={creatingUser}>{creatingUser ? 'Membuat…' : 'Buat akun'}</button>
-            </form>
-            {usersError && <p className="err" role="alert">{usersError}</p>}
-          </section>
-
-          <section className="panel">
-            <div className="row"><h3>Daftar akun</h3><button className="btn line sm" type="button" onClick={loadUsers}>Muat ulang</button></div>
-            {usersLoading ? <p role="status">Memuat akun…</p> : (
-              <div className="tw"><table>
-                <thead><tr><th>Email</th><th>Role</th><th>Dibuat</th><th /></tr></thead>
-                <tbody>{users.map((account) => (
-                  <tr key={account.id}>
-                    <td>{account.email}{account.id === user?.id ? ' (akun Anda)' : ''}</td>
-                    <td>
-                      <select aria-label={`Role ${account.email}`} value={account.role} disabled={account.id === user?.id} onChange={(event) => updateUserRole(account.id, event.target.value)}>
-                        {ROLES.map((item) => <option key={item} value={item}>{item}</option>)}
-                      </select>
-                    </td>
-                    <td>{new Date(account.created_at).toLocaleDateString('id-ID')}</td>
-                    <td>
-                      <button className="btn line sm bad" type="button" onClick={() => ask(account.id, () => deleteUser(account.id))}>
-                        {armed === account.id ? 'Yakin hapus?' : 'Hapus'}
-                      </button>
-                    </td>
-                  </tr>
-                ))}</tbody>
-              </table></div>
-            )}
-          </section>
-        </>
+        <section className="panel">
+          <div className="row"><h3>Kelola akun</h3><button className="btn line sm" type="button" onClick={loadUsers}>Muat ulang</button></div>
+          <p className="mute">Pembeli dan penjual mendaftar sendiri melalui halaman Daftar. Admin dapat mengatur role atau menghapus akun.</p>
+          {usersError && <p className="err" role="alert">{usersError}</p>}
+          {usersLoading ? <p role="status">Memuat akun…</p> : (
+            <div className="tw"><table>
+              <thead><tr><th>Nama</th><th>Email</th><th>Role</th><th>Dibuat</th><th /></tr></thead>
+              <tbody>{users.map((account) => (
+                <tr key={account.id}>
+                  <td>{account.nama}</td>
+                  <td>{account.email}{account.id === user?.id ? ' (akun Anda)' : ''}</td>
+                  <td>
+                    <select aria-label={`Role ${account.email}`} value={account.role} disabled={account.id === user?.id} onChange={(event) => updateUserRole(account.id, event.target.value)}>
+                      {ROLES.map((item) => <option key={item} value={item}>{item}</option>)}
+                    </select>
+                  </td>
+                  <td>{new Date(account.created_at).toLocaleDateString('id-ID')}</td>
+                  <td>
+                    <button className="btn line sm bad" type="button" onClick={() => ask(account.id, () => deleteUser(account.id))}>
+                      {armed === account.id ? 'Yakin hapus?' : 'Hapus'}
+                    </button>
+                  </td>
+                </tr>
+              ))}</tbody>
+            </table></div>
+          )}
+        </section>
       ) : (
         <>
           <div className="stats">
@@ -240,7 +215,7 @@ export default function Dashboard({
 
           {isAdmin && (
             <form className="panel wa-row" onSubmit={saveWa}>
-              <div className="fg"><label htmlFor="wa">Nomor WhatsApp toko (format 62…)</label><input id="wa" value={waIn} onChange={(event) => setWaIn(event.target.value)} inputMode="numeric" /></div>
+                <div className="fg"><label htmlFor="wa">Nomor WhatsApp toko (format 62…)</label><input id="wa" type="tel" value={waIn} onChange={(event) => setWaIn(event.target.value.replace(/\D/g, '').slice(0, 15))} inputMode="numeric" maxLength={15} /></div>
               <button className="btn ink" type="submit">Simpan nomor</button>
             </form>
           )}
@@ -248,12 +223,12 @@ export default function Dashboard({
           <div className="dash">
             <form className="panel" onSubmit={submitProduct} noValidate>
               <h3>{f.id ? 'Ubah produk' : 'Tambah produk'}</h3>
-              {field('nama', 'Nama *', { maxLength: 80 })}
-              {field('kategori', 'Kategori *', { list: 'cl', maxLength: 40 })}
+              {field('nama', 'Nama *', { maxLength: 80, required: true })}
+              {field('kategori', 'Kategori *', { list: 'cl', maxLength: 40, required: true })}
               <datalist id="cl">{cats.map((category) => <option key={category} value={category} />)}</datalist>
-              {field('harga', 'Harga (Rp) *', { inputMode: 'numeric', placeholder: '750000' })}
-              {field('stok', 'Stok *', { inputMode: 'numeric', placeholder: '5' })}
-              <div className="fg"><label htmlFor="deskripsi">Deskripsi</label><textarea id="deskripsi" rows={2} maxLength={300} value={f.deskripsi} onChange={set('deskripsi')} /></div>
+              {field('harga', 'Harga (Rp) *', { type: 'number', min: 0, max: 1000000000, step: 1, required: true, placeholder: '750000' })}
+              {field('stok', 'Stok *', { type: 'number', min: 0, max: 2147483647, step: 1, required: true, placeholder: '5' })}
+              <div className="fg"><label htmlFor="deskripsi">Deskripsi</label><textarea id="deskripsi" rows={2} maxLength={300} value={f.deskripsi} onChange={set('deskripsi')} aria-invalid={Boolean(err.deskripsi)} aria-describedby={err.deskripsi ? 'error-deskripsi' : undefined} /><span className="err" id="error-deskripsi">{err.deskripsi}</span></div>
               {field('imageUrl', 'URL gambar (opsional)', { placeholder: 'Contoh: /products/nama-file.webp' })}
               <label className="chk"><input type="checkbox" checked={f.unggulan} onChange={set('unggulan')} /> Produk unggulan</label>
               <div className="acts">

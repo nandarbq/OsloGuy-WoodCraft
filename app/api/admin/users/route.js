@@ -17,9 +17,6 @@ function limited(request) {
   if (hits.size > 5000) hits.clear();
   return recent.length > 30;
 }
-const strongPassword = (p) =>
-  p.length >= 12 && p.length <= 72 && /[a-z]/.test(p) && /[A-Z]/.test(p) && /\d/.test(p);
-
 async function authorizeAdmin(request) {
   if (limited(request)) return { response: reply({ error: 'Terlalu banyak permintaan. Coba lagi sebentar lagi.' }, 429) };
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -78,47 +75,9 @@ export async function GET(request) {
   if (context.response) return context.response;
 
   const { data, error } = await context.adminClient
-    .from('profiles').select('id,email,role,created_at').order('created_at', { ascending: true });
+    .from('profiles').select('id,nama,email,role,created_at').order('created_at', { ascending: true });
   if (error) return reply({ error: `Gagal memuat akun: ${error.message}` }, 500);
   return reply({ users: data });
-}
-
-export async function POST(request) {
-  const context = await authorizeAdmin(request);
-  if (context.response) return context.response;
-
-  const { body, response } = await readBody(request);
-  if (response) return response;
-  const email = typeof body.email === 'string' ? body.email.trim().toLowerCase() : '';
-  const password = typeof body.password === 'string' ? body.password : '';
-  const role = body.role;
-  if (email.length > 254 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-    return reply({ error: 'Masukkan email yang valid.' }, 400);
-  }
-  if (!strongPassword(password)) {
-    return reply({ error: 'Password 12–72 karakter dan wajib memuat huruf besar, huruf kecil, dan angka.' }, 400);
-  }
-  if (!ROLES.includes(role)) return reply({ error: 'Role harus admin, seller, atau buyer.' }, 400);
-
-  const { data, error: createError } = await context.adminClient.auth.admin.createUser({
-    email,
-    password,
-    email_confirm: true,
-  });
-  if (createError) return reply({ error: `Gagal membuat akun: ${createError.message}` }, 400);
-
-  const { error: profileError } = await context.adminClient.from('profiles').upsert({
-    id: data.user.id,
-    email,
-    role,
-  });
-  if (profileError) {
-    const { error: cleanupError } = await context.adminClient.auth.admin.deleteUser(data.user.id);
-    const cleanupNote = cleanupError ? ` Akun sementara juga gagal dibersihkan: ${cleanupError.message}` : '';
-    return reply({ error: `Akun dibuat tetapi role gagal disimpan: ${profileError.message}.${cleanupNote}` }, 500);
-  }
-
-  return reply({ user: { id: data.user.id, email, role } }, 201);
 }
 
 export async function PATCH(request) {

@@ -4,6 +4,7 @@ import { useProducts } from '../lib/store';
 import Catalog from './Catalog';
 import Dashboard from './Dashboard';
 import Login from './Login';
+import Register from './Register';
 
 const ROLE_LABELS = { admin: 'Admin', seller: 'Seller', buyer: 'Buyer' };
 
@@ -43,7 +44,10 @@ export default function Shop() {
             <button aria-pressed={view === 'catalog'} onClick={() => setView('catalog')}>Katalog</button>
             {canOpenDashboard && <button aria-pressed={view === 'dashboard'} onClick={() => setView('dashboard')}>{data.role === 'seller' ? 'Produk saya' : 'Dashboard'}</button>}
             {data.isSupabase && !data.user && !data.authLoading && (
-              <button aria-pressed={view === 'login'} onClick={() => setView('login')}>Masuk</button>
+              <>
+                <button aria-pressed={view === 'login'} onClick={() => setView('login')}>Masuk</button>
+                <button aria-pressed={view === 'register'} onClick={() => setView('register')}>Daftar</button>
+              </>
             )}
             {data.isSupabase && data.user && (
               <>
@@ -65,7 +69,9 @@ export default function Shop() {
               : data.user && !data.role
                 ? <main className="wrap dash-page"><p role="alert">Role akun belum tersedia. Minta admin memperbaiki akun atau jalankan SQL setup.</p></main>
                 : view === 'login' && !data.user
-                  ? <Login signIn={data.signIn} onCancel={() => setView('catalog')} />
+                  ? <Login signIn={data.signIn} onRegister={() => setView('register')} onCancel={() => setView('catalog')} />
+                  : view === 'register' && !data.user
+                    ? <Register signUp={data.signUp} onLogin={() => setView('login')} onCancel={() => setView('catalog')} />
                   : view === 'dashboard' && canOpenDashboard
                     ? <Dashboard {...data} />
                     : <Catalog {...data} />}

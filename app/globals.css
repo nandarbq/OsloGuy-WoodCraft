@@ -165,7 +165,14 @@ td.a { display: flex; gap: 6px; white-space: nowrap; }
 .login-fields { margin-top: 25px; }
 .login-fields .fg { margin-bottom: 17px; }
 .login-fields input { min-height: 46px; }
+.password-control { position: relative; }
+.password-control input { padding-right: 48px; }
+.password-toggle { position: absolute; top: 50%; right: 7px; display: grid; width: 36px; height: 36px; place-items: center; transform: translateY(-50%); border: 0; border-radius: 5px; background: transparent; color: #777e77; cursor: pointer; }
+.password-toggle:hover { background: var(--forest-soft); color: var(--forest); }
+.password-toggle svg { width: 19px; height: 19px; fill: none; stroke: currentColor; stroke-linecap: round; stroke-linejoin: round; stroke-width: 1.7; }
+.form-success { padding: 10px 12px; border-radius: 6px; background: var(--forest-soft); color: var(--forest); font-size: .82rem; }
 .login-help { margin: 21px 0 0; padding-top: 17px; border-top: 1px solid var(--line); color: var(--mute); font-size: .74rem; }
+.text-button { padding: 0; border: 0; background: transparent; color: var(--forest); cursor: pointer; font-weight: 700; text-decoration: underline; text-underline-offset: 3px; }
 
 .foot { display: flex; justify-content: space-between; align-items: center; gap: 20px; padding-block: 22px; border-top: 1px solid var(--line); color: var(--mute); font-size: .75rem; }
 .foot div { display: flex; align-items: center; gap: 12px; }

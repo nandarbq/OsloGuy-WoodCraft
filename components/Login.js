@@ -1,13 +1,13 @@
 'use client';
 import { useEffect, useRef, useState } from 'react';
+import PasswordField from './PasswordField';
 
 const MAX_TRIES = 5;
 const LOCK_SECONDS = 30;
 
-export default function Login({ signIn, onCancel }) {
+export default function Login({ signIn, onRegister, onCancel }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [show, setShow] = useState(false);
   const [error, setError] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [lock, setLock] = useState(0);
@@ -52,19 +52,21 @@ export default function Login({ signIn, onCancel }) {
       <form className="panel login-card" onSubmit={submit} noValidate={false}>
         <span className="eyebrow">AREA MEMBER</span>
         <h2 className="dh">Selamat datang.</h2>
-        <p className="mute">Masuk dengan akun yang diberikan admin toko.</p>
+        <p className="mute">Masuk dengan akun OsloGuy Anda.</p>
         <div className="login-fields">
           <div className="fg">
             <label htmlFor="login-email">Alamat email</label>
             <input id="login-email" type="email" autoComplete="username" required maxLength={254} value={email} onChange={(e) => setEmail(e.target.value)} placeholder="nama@email.com" />
           </div>
-          <div className="fg">
-            <label htmlFor="login-password">Kata sandi</label>
-            <div className="pw">
-              <input id="login-password" type={show ? 'text' : 'password'} autoComplete="current-password" required maxLength={72} value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Masukkan kata sandi" />
-              <button type="button" className="btn line sm" onClick={() => setShow(!show)} aria-pressed={show}>{show ? 'Sembunyikan' : 'Lihat'}</button>
-            </div>
-          </div>
+          <PasswordField
+            id="login-password"
+            label="Kata sandi"
+            autoComplete="current-password"
+            placeholder="Masukkan kata sandi"
+            maxLength={72}
+            value={password}
+            onChange={(event) => setPassword(event.target.value)}
+          />
         </div>
         {error && <p className="err" role="alert">{error}</p>}
         <div className="acts">
@@ -73,7 +75,7 @@ export default function Login({ signIn, onCancel }) {
           </button>
           <button className="btn line" type="button" onClick={onCancel}>Kembali ke katalog</button>
         </div>
-        <p className="login-help">Butuh akses? Hubungi admin toko untuk mendapatkan akun.</p>
+        <p className="login-help">Belum punya akun? <button className="text-button" type="button" onClick={onRegister}>Daftar sekarang</button></p>
       </form>
     </main>
   );

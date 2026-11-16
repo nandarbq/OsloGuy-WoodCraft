@@ -1,9 +1,30 @@
 create table if not exists public.profiles (
   id uuid primary key references auth.users(id) on delete cascade,
   email text not null,
+  nama text not null default 'Akun lama',
   role text not null default 'buyer' check (role in ('admin', 'seller', 'buyer')),
   created_at timestamptz not null default now()
 );
+
+alter table public.profiles
+  add column if not exists nama text not null default 'Akun lama';
+
+update public.profiles
+set nama = 'Akun lama'
+where char_length(btrim(nama)) not between 2 and 80 or nama ~ '[0-9]';
+
+do $$
+begin
+  if not exists (
+    select 1 from pg_constraint
+    where conrelid = 'public.profiles'::regclass and conname = 'profiles_nama_valid'
+  ) then
+    alter table public.profiles
+      add constraint profiles_nama_valid
+      check (char_length(btrim(nama)) between 2 and 80 and nama !~ '[0-9]');
+  end if;
+end;
+$$;
 
 create table if not exists public.products (
   id uuid primary key default gen_random_uuid(),
@@ -43,9 +64,12 @@ language plpgsql
 security definer
 set search_path = ''
 as $$
+declare
+  user_name text := coalesce(nullif(btrim(new.raw_user_meta_data ->> 'nama'), ''), 'Akun lama');
+  user_role text := case when new.raw_user_meta_data ->> 'role' = 'seller' then 'seller' else 'buyer' end;
 begin
-  insert into public.profiles (id, email, role)
-  values (new.id, new.email, 'buyer')
+  insert into public.profiles (id, email, nama, role)
+  values (new.id, new.email, user_name, user_role)
   on conflict (id) do update set email = excluded.email;
   return new;
 end;
@@ -56,8 +80,12 @@ create trigger on_auth_user_created
   after insert on auth.users
   for each row execute procedure public.handle_new_user();
 
-insert into public.profiles (id, email, role)
-select id, email, 'buyer'
+insert into public.profiles (id, email, nama, role)
+select
+  id,
+  email,
+  coalesce(nullif(btrim(raw_user_meta_data ->> 'nama'), ''), 'Akun lama'),
+  case when raw_user_meta_data ->> 'role' = 'seller' then 'seller' else 'buyer' end
 from auth.users
 where email is not null
 on conflict (id) do update set email = excluded.email;
