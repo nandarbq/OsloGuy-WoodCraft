@@ -4,12 +4,18 @@ import { SEED, rp } from '../lib/store';
 
 const EMPTY = { id: '', nama: '', kategori: '', harga: '', stok: '', deskripsi: '', imageUrl: '', unggulan: false };
 
-export default function Dashboard({ items, commit, wa, setWa }) {
+export default function Dashboard({
+  items, commit, wa, setWa, isSupabase, authLoading, user, signIn, signOut,
+}) {
   const [f, setF] = useState(EMPTY);
   const [err, setErr] = useState({});
   const [armed, setArmed] = useState('');
   const [waIn, setWaIn] = useState(wa);
   const [msg, setMsg] = useState('');
+  const [loginEmail, setLoginEmail] = useState('');
+  const [loginPassword, setLoginPassword] = useState('');
+  const [loginError, setLoginError] = useState('');
+  const [signingIn, setSigningIn] = useState(false);
   const cats = [...new Set(items.map((p) => p.kategori))].sort();
   const total = items.reduce((a, p) => a + p.stok, 0);
   const max = Math.max(1, ...items.map((p) => p.stok));
@@ -17,7 +23,20 @@ export default function Dashboard({ items, commit, wa, setWa }) {
   const say = (m) => { setMsg(m); setTimeout(() => setMsg(''), 2200); };
   const ask = (id, fn) => { if (armed === id) { setArmed(''); fn(); } else { setArmed(id); setTimeout(() => setArmed((a) => (a === id ? '' : a)), 3000); } };
 
-  function submit(e) {
+  async function submitLogin(e) {
+    e.preventDefault();
+    setSigningIn(true);
+    setLoginError('');
+    try {
+      await signIn(loginEmail, loginPassword);
+    } catch (loginError) {
+      setLoginError(loginError.message || 'Login gagal. Periksa email dan password.');
+    } finally {
+      setSigningIn(false);
+    }
+  }
+
+  async function submit(e) {
     e.preventDefault();
     const nama = f.nama.trim(), kategori = f.kategori.trim(), img = f.imageUrl.trim();
     const harga = Number(f.harga), stok = Number(f.stok), er = {};
@@ -29,26 +48,80 @@ export default function Dashboard({ items, commit, wa, setWa }) {
     setErr(er);
     if (Object.keys(er).length) return;
     const d = { nama, kategori, harga, stok, deskripsi: f.deskripsi.trim(), imageUrl: img, unggulan: f.unggulan };
-    commit(f.id ? items.map((p) => (p.id === f.id ? { ...p, ...d } : p)) : [{ id: 'og-' + Date.now(), ...d }, ...items]);
-    say(f.id ? 'Produk diperbarui' : 'Produk ditambahkan');
-    setF(EMPTY);
+    const next = f.id
+      ? items.map((p) => (p.id === f.id ? { ...p, ...d } : p))
+      : [{ id: crypto.randomUUID(), ...d }, ...items];
+    try {
+      await commit(next);
+      say(f.id ? 'Produk diperbarui' : 'Produk ditambahkan');
+      setF(EMPTY);
+    } catch (saveError) {
+      say(`Gagal menyimpan: ${saveError.message || 'terjadi kesalahan.'}`);
+    }
   }
 
   function saveWa(e) {
     e.preventDefault();
     const n = waIn.replace(/\D/g, '');
     if (n.length < 8 || n.length > 15) return say('Nomor harus 8–15 digit.');
-    setWa(n); say('Nomor WhatsApp disimpan');
+    try {
+      setWa(n);
+      say('Nomor WhatsApp disimpan');
+    } catch (saveError) {
+      say(`Gagal menyimpan: ${saveError.message || 'terjadi kesalahan.'}`);
+    }
+  }
+
+  async function resetProducts() {
+    try {
+      await commit(SEED);
+      say('Data contoh dipulihkan');
+    } catch (saveError) {
+      say(`Gagal reset: ${saveError.message || 'terjadi kesalahan.'}`);
+    }
+  }
+
+  async function deleteProduct(id) {
+    try {
+      await commit(items.filter((product) => product.id !== id));
+      say('Produk dihapus');
+    } catch (saveError) {
+      say(`Gagal menghapus: ${saveError.message || 'terjadi kesalahan.'}`);
+    }
   }
 
   const field = (k, label, extra = {}) => (
     <div className="fg"><label htmlFor={k}>{label}</label><input id={k} value={f[k]} onChange={set(k)} {...extra} /><span className="err">{err[k]}</span></div>
   );
 
+  if (isSupabase && authLoading) {
+    return <main className="wrap dash-page"><p role="status">Memeriksa sesi login…</p></main>;
+  }
+
+  if (isSupabase && !user) {
+    return (
+      <main className="wrap dash-page">
+        <h2 className="dh">Login <em>admin</em></h2>
+        <form className="panel" onSubmit={submitLogin} style={{ maxWidth: 480 }}>
+          <p className="mute">Masuk dengan akun admin yang dibuat di Supabase Dashboard.</p>
+          <div className="fg"><label htmlFor="admin-email">Email</label><input id="admin-email" type="email" autoComplete="username" required value={loginEmail} onChange={(e) => setLoginEmail(e.target.value)} /></div>
+          <div className="fg"><label htmlFor="admin-password">Password</label><input id="admin-password" type="password" autoComplete="current-password" required value={loginPassword} onChange={(e) => setLoginPassword(e.target.value)} /></div>
+          {loginError && <p className="err" role="alert">{loginError}</p>}
+          <button className="btn ink" type="submit" disabled={signingIn}>{signingIn ? 'Memproses…' : 'Masuk'}</button>
+        </form>
+      </main>
+    );
+  }
+
   return (
     <main className="wrap dash-page">
       <h2 className="dh">Dashboard <em>bengkel</em></h2>
-      <p className="mute">Mode demo: tanpa login, data hanya tersimpan di browser ini.</p>
+      <p className="mute">
+        {isSupabase ? `Login sebagai ${user.email}` : 'Mode demo: tanpa login, data hanya tersimpan di browser ini.'}
+        {isSupabase && <button className="btn line sm" type="button" onClick={async () => {
+          try { await signOut(); } catch (signOutError) { say(`Gagal keluar: ${signOutError.message}`); }
+        }}>Keluar</button>}
+      </p>
       <div className="stats">
         <div><b>{items.length}</b><span>Jenis produk</span></div>
         <div><b>{total}</b><span>Total unit stok</span></div>
@@ -79,7 +152,7 @@ export default function Dashboard({ items, commit, wa, setWa }) {
 
         <div className="panel">
           <div className="row"><h3>Inventaris</h3>
-            <button className="btn line sm" type="button" onClick={() => ask('reset', () => { commit(SEED); say('Data contoh dipulihkan'); })}>{armed === 'reset' ? 'Yakin reset?' : 'Reset data contoh'}</button>
+            <button className="btn line sm" type="button" onClick={() => ask('reset', resetProducts)}>{armed === 'reset' ? 'Yakin reset?' : 'Reset data contoh'}</button>
           </div>
           <div className="tw"><table>
             <thead><tr><th>Produk</th><th>Harga</th><th>Stok</th><th /></tr></thead>
@@ -90,7 +163,7 @@ export default function Dashboard({ items, commit, wa, setWa }) {
                 <td><div className="bar"><i style={{ width: `${(p.stok / max) * 100}%` }} className={p.stok === 0 ? 'z' : p.stok <= 3 ? 'l' : ''} /></div>{p.stok}</td>
                 <td className="a">
                   <button className="btn line sm" onClick={() => { setF({ ...p, harga: String(p.harga), stok: String(p.stok) }); setErr({}); window.scrollTo({ top: 0, behavior: 'smooth' }); }}>Ubah</button>
-                  <button className="btn line sm bad" onClick={() => ask(p.id, () => { commit(items.filter((x) => x.id !== p.id)); say('Produk dihapus'); })}>{armed === p.id ? 'Yakin?' : 'Hapus'}</button>
+                  <button className="btn line sm bad" onClick={() => ask(p.id, () => deleteProduct(p.id))}>{armed === p.id ? 'Yakin?' : 'Hapus'}</button>
                 </td>
               </tr>))}
             </tbody>
