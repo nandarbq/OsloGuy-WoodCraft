@@ -39,6 +39,8 @@ export default function Login({ signIn, requestPasswordReset, onRegister, onCanc
     } catch (authError) {
       if (mode === 'forgot') {
         setError(authError.message || 'Tautan reset gagal dikirim. Coba lagi.');
+      } else if (authError.code !== 'invalid_credentials') {
+        setError(authError.message || 'Login gagal. Coba lagi.');
       } else {
         tries.current += 1;
         setPassword('');
