@@ -35,7 +35,10 @@ export default function Shop() {
     <>
       <header className="top">
         <div className="wrap top-in">
-          <div className="logo"><span className="mark" aria-hidden="true" />OsloGuy</div>
+          <a className="logo" href="#" onClick={() => setView('catalog')} aria-label="OsloGuy, kembali ke katalog">
+            <span className="mark" aria-hidden="true">O</span>
+            <span>OsloGuy<small>WOODCRAFT STUDIO</small></span>
+          </a>
           <nav aria-label="Tampilan">
             <button aria-pressed={view === 'catalog'} onClick={() => setView('catalog')}>Katalog</button>
             {canOpenDashboard && <button aria-pressed={view === 'dashboard'} onClick={() => setView('dashboard')}>{data.role === 'seller' ? 'Produk saya' : 'Dashboard'}</button>}
@@ -68,7 +71,8 @@ export default function Shop() {
                     : <Catalog {...data} />}
         </>}
       <footer className="foot wrap">
-        © OsloGuy. {data.isSupabase ? 'Pesanan diproses lewat WhatsApp.' : 'Mode demo: data tersimpan di browser ini.'}
+        <div><strong>OsloGuy</strong><span>Furniture & objects, made with care.</span></div>
+        <p>© OsloGuy Woodcraft. {data.isSupabase ? 'Pesanan diproses lewat WhatsApp.' : 'Mode demo: data tersimpan di browser ini.'}</p>
       </footer>
     </>
   );

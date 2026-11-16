@@ -47,3 +47,13 @@ Role produk dan user juga dibatasi di Supabase RLS, bukan hanya disembunyikan di
 Di hosting, misalnya Vercel, atur tiga environment variable yang sama di **Project Settings → Environment Variables**, termasuk secret server-side `SUPABASE_SERVICE_ROLE_KEY`, lalu deploy ulang. Jangan memasukkan secret tersebut ke variabel `NEXT_PUBLIC_*`.
 
 Foto produk disimpan sebagai URL pada `image_url`; Supabase Storage belum dikonfigurasi.
+
+## Foto katalog demo
+
+Mode demo lokal dan `supabase/demo-data.sql` memakai foto WebP lokal di `public/products`, jadi katalog tidak bergantung pada hotlink saat dibuka. Foto referensi dipilih dari Openverse dengan lisensi CC0/public domain; foto tersebut hanya untuk data demo dan sebaiknya diganti dengan foto produk milik toko sebelum dipakai untuk penjualan sungguhan.
+
+- [Meja kopi](https://pd.w.org/2025/02/58767b0267bc2e906.18851946-1536x2048.jpeg) dan [rak dinding](https://pd.w.org/2026/05/476a1429b6c6b972.70327558-2048x1867.jpeg): WordPress Photo Directory.
+- [Armchair](https://ids.si.edu/ids/deliveryService?id=NMAAHC-2011_12_26_004-000001): Smithsonian Open Access.
+- [Papan saji](https://images.rawpixel.com/editor_1024/czNmcy1wcml2YXRlL3Jhd3BpeGVsX2ltYWdlcy93ZWJzaXRlX2NvbnRlbnQvbHIvYnMxMDk3LWltYWdlLWt3eXQ3YjcyLmpwZw.jpg) dan [stool](https://images.rawpixel.com/editor_1024/cHJpdmF0ZS9zdGF0aWMvaW1hZ2Uvd2Vic2l0ZS8yMDIyLTA0L2xyL3NrMzUxOC1pbWFnZS1rd3Z4OWd0NS5qcGc.jpg): Rawpixel public-domain collection.
+- [Meja kerja](https://live.staticflickr.com/962/41252892574_48e1803c73_b.jpg), [jam](https://live.staticflickr.com/414/32514132710_f024df6213_b.jpg), dan [foto alat kerja](https://live.staticflickr.com/4350/37099081475_cce2cb1ee6_b.jpg): Flickr CC0.
+- [Nakas](https://pd.w.org/2026/03/58669c56435764159.14264172-1478x2048.jpeg): WordPress Photo Directory.

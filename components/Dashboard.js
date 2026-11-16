@@ -168,8 +168,11 @@ export default function Dashboard({
 
   return (
     <main className="wrap dash-page">
-      <h2 className="dh">{isAdmin ? 'Dashboard admin' : 'Produk saya'}</h2>
-      <p className="mute">Login sebagai {user?.email || 'mode demo'}.</p>
+      <div className="dash-intro">
+        <span className="eyebrow">{isAdmin ? 'PANEL TOKO' : 'AREA SELLER'}</span>
+        <h2 className="dh">{isAdmin ? 'Dashboard admin' : 'Produk saya'}</h2>
+        <p>Login sebagai {user?.email || 'mode demo'}.</p>
+      </div>
       {isAdmin && (
         <div className="chips" role="tablist" aria-label="Menu dashboard">
           <button className="chip" role="tab" aria-selected={tab === 'products'} onClick={() => setTab('products')}>Produk</button>
@@ -251,7 +254,7 @@ export default function Dashboard({
               {field('harga', 'Harga (Rp) *', { inputMode: 'numeric', placeholder: '750000' })}
               {field('stok', 'Stok *', { inputMode: 'numeric', placeholder: '5' })}
               <div className="fg"><label htmlFor="deskripsi">Deskripsi</label><textarea id="deskripsi" rows={2} maxLength={300} value={f.deskripsi} onChange={set('deskripsi')} /></div>
-              {field('imageUrl', 'URL gambar (opsional)', { placeholder: 'Kosongkan untuk ilustrasi bawaan' })}
+              {field('imageUrl', 'URL gambar (opsional)', { placeholder: 'Contoh: /products/nama-file.webp' })}
               <label className="chk"><input type="checkbox" checked={f.unggulan} onChange={set('unggulan')} /> Produk unggulan</label>
               <div className="acts">
                 <button className="btn ink" type="submit" style={{ flex: 1 }}>{f.id ? 'Simpan perubahan' : 'Tambah produk'}</button>

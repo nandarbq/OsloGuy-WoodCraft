@@ -45,18 +45,25 @@ export default function Login({ signIn, onCancel }) {
 
   return (
     <main className="wrap login-page">
+      <aside className="login-aside">
+        <img src="/products/workshop-tools.webp" alt="" />
+        <div><span className="eyebrow">OSLOGUY WORKSHOP</span><h2>Karya yang baik<br />dimulai dari bahan<br /><i>yang jujur.</i></h2></div>
+      </aside>
       <form className="panel login-card" onSubmit={submit} noValidate={false}>
-        <h2 className="dh">Masuk</h2>
-        <p className="mute">Gunakan akun yang dibuat oleh admin toko.</p>
-        <div className="fg">
-          <label htmlFor="login-email">Email</label>
-          <input id="login-email" type="email" autoComplete="username" required maxLength={254} value={email} onChange={(e) => setEmail(e.target.value)} />
-        </div>
-        <div className="fg">
-          <label htmlFor="login-password">Password</label>
-          <div className="pw">
-            <input id="login-password" type={show ? 'text' : 'password'} autoComplete="current-password" required maxLength={72} value={password} onChange={(e) => setPassword(e.target.value)} />
-            <button type="button" className="btn line sm" onClick={() => setShow(!show)} aria-pressed={show}>{show ? 'Sembunyikan' : 'Lihat'}</button>
+        <span className="eyebrow">AREA MEMBER</span>
+        <h2 className="dh">Selamat datang.</h2>
+        <p className="mute">Masuk dengan akun yang diberikan admin toko.</p>
+        <div className="login-fields">
+          <div className="fg">
+            <label htmlFor="login-email">Alamat email</label>
+            <input id="login-email" type="email" autoComplete="username" required maxLength={254} value={email} onChange={(e) => setEmail(e.target.value)} placeholder="nama@email.com" />
+          </div>
+          <div className="fg">
+            <label htmlFor="login-password">Kata sandi</label>
+            <div className="pw">
+              <input id="login-password" type={show ? 'text' : 'password'} autoComplete="current-password" required maxLength={72} value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Masukkan kata sandi" />
+              <button type="button" className="btn line sm" onClick={() => setShow(!show)} aria-pressed={show}>{show ? 'Sembunyikan' : 'Lihat'}</button>
+            </div>
           </div>
         </div>
         {error && <p className="err" role="alert">{error}</p>}
@@ -64,8 +71,9 @@ export default function Login({ signIn, onCancel }) {
           <button className="btn brown" type="submit" disabled={submitting || lock > 0} style={{ flex: 1 }}>
             {lock > 0 ? `Tunggu ${lock} detik` : submitting ? 'Memproses…' : 'Masuk'}
           </button>
-          <button className="btn line" type="button" onClick={onCancel}>Kembali</button>
+          <button className="btn line" type="button" onClick={onCancel}>Kembali ke katalog</button>
         </div>
+        <p className="login-help">Butuh akses? Hubungi admin toko untuk mendapatkan akun.</p>
       </form>
     </main>
   );
