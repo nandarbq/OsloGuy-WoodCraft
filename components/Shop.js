@@ -35,7 +35,7 @@ export default function Shop() {
     <>
       <header className="top">
         <div className="wrap top-in">
-          <div className="logo">Oslo<b>Guy</b></div>
+          <div className="logo"><span className="mark" aria-hidden="true" />OsloGuy</div>
           <nav aria-label="Tampilan">
             <button aria-pressed={view === 'catalog'} onClick={() => setView('catalog')}>Katalog</button>
             {canOpenDashboard && <button aria-pressed={view === 'dashboard'} onClick={() => setView('dashboard')}>{data.role === 'seller' ? 'Produk saya' : 'Dashboard'}</button>}
@@ -44,7 +44,7 @@ export default function Shop() {
             )}
             {data.isSupabase && data.user && (
               <>
-                <span>{data.user.email} · {ROLE_LABELS[data.role] || 'Memuat role'}</span>
+                <span className="who">{data.user.email} <i>{ROLE_LABELS[data.role] || 'Memuat role'}</i></span>
                 <button onClick={logout}>Keluar</button>
               </>
             )}
@@ -68,7 +68,7 @@ export default function Shop() {
                     : <Catalog {...data} />}
         </>}
       <footer className="foot wrap">
-        © OsloGuy · {data.isSupabase ? 'Data produk tersimpan di Supabase.' : 'Mode demo, data tersimpan di browser ini.'}
+        © OsloGuy. {data.isSupabase ? 'Pesanan diproses lewat WhatsApp.' : 'Mode demo: data tersimpan di browser ini.'}
       </footer>
     </>
   );

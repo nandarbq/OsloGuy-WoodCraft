@@ -65,7 +65,7 @@ export default function Dashboard({
     if (!kategori) errors.kategori = 'Kategori wajib diisi.';
     if (f.harga === '' || !Number.isFinite(harga) || harga < 0) errors.harga = 'Harga harus angka 0 atau lebih.';
     if (f.stok === '' || !Number.isInteger(stok) || stok < 0) errors.stok = 'Stok harus bilangan bulat 0 atau lebih.';
-    if (imageUrl && !/^(https?:\/\/|\.{0,2}\/|data:image\/)/i.test(imageUrl)) errors.imageUrl = 'Gunakan URL http(s) atau path lokal.';
+    if (imageUrl && !/^(https:\/\/|\/)/i.test(imageUrl)) errors.imageUrl = 'Gunakan URL https:// atau path yang diawali /.';
     setErr(errors);
     if (Object.keys(errors).length) return;
 
@@ -119,8 +119,8 @@ export default function Dashboard({
   async function createUser(event) {
     event.preventDefault();
     setUsersError('');
-    if (newUser.password.length < 8) {
-      setUsersError('Password minimal 8 karakter.');
+    if (newUser.password.length < 12 || !/[a-z]/.test(newUser.password) || !/[A-Z]/.test(newUser.password) || !/\d/.test(newUser.password)) {
+      setUsersError('Password minimal 12 karakter dengan huruf besar, huruf kecil, dan angka.');
       return;
     }
     setCreatingUser(true);
@@ -168,7 +168,7 @@ export default function Dashboard({
 
   return (
     <main className="wrap dash-page">
-      <h2 className="dh">{isAdmin ? 'Dashboard' : 'Dashboard'} <em>{isAdmin ? 'admin' : 'seller'}</em></h2>
+      <h2 className="dh">{isAdmin ? 'Dashboard admin' : 'Produk saya'}</h2>
       <p className="mute">Login sebagai {user?.email || 'mode demo'}.</p>
       {isAdmin && (
         <div className="chips" role="tablist" aria-label="Menu dashboard">
@@ -188,8 +188,8 @@ export default function Dashboard({
                 <input id="new-user-email" type="email" required value={newUser.email} onChange={(event) => setNewUser({ ...newUser, email: event.target.value })} />
               </div>
               <div className="fg" style={{ flex: '1 1 160px' }}>
-                <label htmlFor="new-user-password">Password (min. 8 karakter)</label>
-                <input id="new-user-password" type="password" minLength={8} required value={newUser.password} onChange={(event) => setNewUser({ ...newUser, password: event.target.value })} />
+                <label htmlFor="new-user-password">Password (min. 12 karakter)</label>
+                <input id="new-user-password" type="password" minLength={12} maxLength={72} required value={newUser.password} onChange={(event) => setNewUser({ ...newUser, password: event.target.value })} />
               </div>
               <div className="fg">
                 <label htmlFor="new-user-role">Role</label>

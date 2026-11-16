@@ -1,8 +1,8 @@
 import './globals.css';
-import { Fraunces, Instrument_Sans } from 'next/font/google';
+import { Plus_Jakarta_Sans } from 'next/font/google';
 
-const display = Fraunces({ subsets: ['latin'], variable: '--f-display' });
-const body = Instrument_Sans({ subsets: ['latin'], variable: '--f-body' });
+const display = Plus_Jakarta_Sans({ subsets: ['latin'], weight: ['700', '800'], variable: '--f-display' });
+const body = Plus_Jakarta_Sans({ subsets: ['latin'], weight: ['400', '500', '600'], variable: '--f-body' });
 
 export const metadata = {
   title: 'OsloGuy – Mebel & Kerajinan Kayu',

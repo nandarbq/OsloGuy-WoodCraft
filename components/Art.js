@@ -9,7 +9,7 @@ const IC = {
   nakas: "<rect x='60' y='42' width='80' height='56' rx='3'/><path d='M60 70h80M92 56h16M92 84h16M70 98v20M130 98v20'/>",
   jam: "<circle cx='100' cy='70' r='46'/><path d='M100 70V42M100 70l20 12'/>",
 };
-const COL = { Meja: '#A9743F', Kursi: '#8B5E34', 'Rak & Lemari': '#B8895A', Dekorasi: '#C79A63' };
+const COL = { Meja: '#B97A57', Kursi: '#A96A48', 'Rak & Lemari': '#C58E6B', Dekorasi: '#CFA07F' };
 
 function iconKey(p) {
   const n = p.nama.toLowerCase();
@@ -23,14 +23,14 @@ function iconKey(p) {
 
 export default function Art({ p, sw = 5 }) {
   const k = iconKey(p);
-  const c = COL[p.kategori] || '#A9743F';
+  const c = COL[p.kategori] || '#B97A57';
   const id = `g-${c.slice(1)}`;
   return (
     <svg viewBox="0 0 200 150" preserveAspectRatio="xMidYMid slice" role="img" aria-label={p.nama}>
       <defs>
         <linearGradient id={id} x1="0" y1="0" x2="1" y2="1">
           <stop offset="0" stopColor={c} />
-          <stop offset="1" stopColor="#1b1209" />
+          <stop offset="1" stopColor="#7A4A32" />
         </linearGradient>
       </defs>
       <rect width="200" height="150" fill={`url(#${id})`} />

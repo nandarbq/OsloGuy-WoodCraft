@@ -4,9 +4,24 @@ import { createClient } from '@supabase/supabase-js';
 const ROLES = ['admin', 'seller', 'buyer'];
 
 const reply = (body, status = 200) =>
-  Response.json(body, { status, headers: { 'Cache-Control': 'no-store' } });
+  Response.json(body, { status, headers: { 'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff' } });
+
+// Pembatas laju sederhana per IP (cukup untuk 1 instance; gunakan Upstash/Redis bila multi-instance).
+const hits = new Map();
+function limited(request) {
+  const ip = (request.headers.get('x-forwarded-for') || 'local').split(',')[0].trim();
+  const now = Date.now();
+  const recent = (hits.get(ip) || []).filter((t) => now - t < 60_000);
+  recent.push(now);
+  hits.set(ip, recent);
+  if (hits.size > 5000) hits.clear();
+  return recent.length > 30;
+}
+const strongPassword = (p) =>
+  p.length >= 12 && p.length <= 72 && /[a-z]/.test(p) && /[A-Z]/.test(p) && /\d/.test(p);
 
 async function authorizeAdmin(request) {
+  if (limited(request)) return { response: reply({ error: 'Terlalu banyak permintaan. Coba lagi sebentar lagi.' }, 429) };
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
   const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -40,6 +55,9 @@ async function authorizeAdmin(request) {
 }
 
 async function readBody(request) {
+  if (!(request.headers.get('content-type') || '').includes('application/json')) {
+    return { response: reply({ error: 'Format data tidak valid.' }, 415) };
+  }
   try {
     const body = await request.json();
     if (!body || typeof body !== 'object' || Array.isArray(body)) {
@@ -74,10 +92,12 @@ export async function POST(request) {
   const email = typeof body.email === 'string' ? body.email.trim().toLowerCase() : '';
   const password = typeof body.password === 'string' ? body.password : '';
   const role = body.role;
-  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+  if (email.length > 254 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
     return reply({ error: 'Masukkan email yang valid.' }, 400);
   }
-  if (password.length < 8) return reply({ error: 'Password minimal 8 karakter.' }, 400);
+  if (!strongPassword(password)) {
+    return reply({ error: 'Password 12–72 karakter dan wajib memuat huruf besar, huruf kecil, dan angka.' }, 400);
+  }
   if (!ROLES.includes(role)) return reply({ error: 'Role harus admin, seller, atau buyer.' }, 400);
 
   const { data, error: createError } = await context.adminClient.auth.admin.createUser({
@@ -108,7 +128,7 @@ export async function PATCH(request) {
   const { body, response } = await readBody(request);
   if (response) return response;
   const { id, role } = body;
-  if (typeof id !== 'string' || !ROLES.includes(role)) {
+  if (typeof id !== 'string' || id.length > 64 || !ROLES.includes(role)) {
     return reply({ error: 'Pilih akun dan role yang valid.' }, 400);
   }
   if (id === context.user.id) return reply({ error: 'Role akun yang sedang dipakai tidak bisa diubah.' }, 400);
@@ -136,7 +156,7 @@ export async function DELETE(request) {
   const { body, response } = await readBody(request);
   if (response) return response;
   const { id } = body;
-  if (typeof id !== 'string') return reply({ error: 'Pilih akun yang valid.' }, 400);
+  if (typeof id !== 'string' || id.length > 64) return reply({ error: 'Pilih akun yang valid.' }, 400);
   if (id === context.user.id) return reply({ error: 'Akun admin yang sedang dipakai tidak bisa dihapus.' }, 400);
 
   const { data: target, error: targetError } = await context.adminClient

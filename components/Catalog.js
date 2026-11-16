@@ -34,18 +34,17 @@ export default function Catalog({ items, wa }) {
     <>
       <section className="hero">
         <div className="wrap hero-in">
-          <div>
-            <p className="eyebrow">Bengkel kayu UMKM · dikerjakan dengan tangan</p>
-            <h1>Kayu yang <em>bercerita.</em></h1>
-            <p className="lead">Meja, kursi, rak, dan pernak-pernik kayu dengan garis bersih ala Nordik. Pilih, lalu pesan langsung lewat WhatsApp.</p>
-            <a className="btn amber" href="#koleksi">Lihat koleksi ↓</a>
+          <div className="hero-copy">
+            <h1>Katalog<br /><b>Mebel Kayu</b></h1>
+            <p className="lead">Meja, kursi, rak, dan pernak-pernik kayu buatan tangan dengan garis bersih ala Nordik. Pilih, lalu pesan langsung lewat WhatsApp.</p>
+            <a className="btn brown" href="#koleksi">Lihat koleksi</a>
             <dl className="hstats">
               <div><dt>Produk</dt><dd>{items.length}</dd></div>
               <div><dt>Kategori</dt><dd>{cats.length}</dd></div>
               <div><dt>Unggulan</dt><dd>{items.filter((p) => p.unggulan).length}</dd></div>
             </dl>
           </div>
-          <div className="hero-art" aria-hidden="true"><Art p={hero} sw={3.5} /><span className="ticks" /></div>
+          <div className="hero-art" aria-hidden="true"><Art p={hero} sw={3.5} /><span className="tag">Handmade · Kayu pilihan</span></div>
         </div>
         <div className="marq" aria-hidden="true">
           <div>{[...WOODS, ...WOODS].map((w, i) => <span key={i}>{w}</span>)}</div>
@@ -77,11 +76,9 @@ export default function Catalog({ items, wa }) {
             return (
               <article className="card" key={p.id}>
                 <div className="art">
-                  {p.imageUrl ? <img src={p.imageUrl} alt={p.nama} /> : <Art p={p} />}
-                  <span className="idx">{String(items.indexOf(p) + 1).padStart(2, '0')}</span>
-                  {p.unggulan && <span className="badge">★ Unggulan</span>}
-                  <span className="ticks" />
-                </div>
+                  {p.imageUrl ? <img src={p.imageUrl} alt={p.nama} loading="lazy" referrerPolicy="no-referrer" /> : <Art p={p} />}
+                                    {p.unggulan && <span className="badge">Unggulan</span>}
+                  </div>
                 <div className="cb">
                   <span className="cat">{p.kategori}</span>
                   <h3>{p.nama}</h3>
